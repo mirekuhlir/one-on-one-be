@@ -6,7 +6,7 @@ import { healthRoutes } from "./routes/health.js";
 import { turnRoutes } from "./routes/turn.js";
 import { userRoutes } from "./routes/users.js";
 
-const fastify = Fastify({ logger: true });
+const fastify = Fastify({ logger: true, trustProxy: true });
 
 // CORS
 await fastify.register(fastifyCors, {
@@ -25,7 +25,8 @@ fastify.route({
 	url: "/api/auth/*",
 	async handler(request, reply) {
 		try {
-			const url = new URL(request.url, `http://${request.headers.host}`);
+			const protocol = request.protocol || "https";
+			const url = new URL(request.url, `${protocol}://${request.headers.host}`);
 
 			const headers = new Headers();
 			Object.entries(request.headers).forEach(([key, value]) => {

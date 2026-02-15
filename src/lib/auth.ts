@@ -6,6 +6,14 @@ export const auth = betterAuth({
 	database: new Pool({
 		connectionString: process.env.DATABASE_URL,
 	}),
+	advanced: {
+		useSecureCookies: true,
+		defaultCookieAttributes: {
+			httpOnly: true,
+			secure: true,
+			sameSite: "none",
+		},
+	},
 	emailAndPassword: {
 		enabled: true,
 	},
@@ -13,5 +21,5 @@ export const auth = betterAuth({
 
 	trustedOrigins: process.env.CLIENT_ORIGIN
 		? process.env.CLIENT_ORIGIN.split(",").map((origin) => origin.trim())
-		: ["empty"],
+		: [],
 });
