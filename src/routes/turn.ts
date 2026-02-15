@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { auth } from "../lib/auth.js";
 
 function parseTimeoutMs(value: string | undefined) {
 	const parsed = Number(value);
@@ -33,7 +34,23 @@ function toUrlArray(urls: IceServer["urls"]) {
 }
 
 export async function turnRoutes(fastify: FastifyInstance) {
-	fastify.get("/credentials", async (_request, reply) => {
+	fastify.get("/credentials", async (request, reply) => {
+		const headers = new Headers();
+		Object.entries(request.headers).forEach(([key, value]) => {
+			if (value) headers.append(key, value.toString());
+		});
+
+		const session = await auth.api.getSession({
+			headers,
+		});
+
+		if (!session) {
+			reply.status(401).send({
+				error: "Unauthorized",
+				code: "UNAUTHORIZED",
+			});
+			return;
+		}
 		const keyId = process.env.CF_TURN_KEY_ID;
 		const apiToken = process.env.CF_TURN_API_TOKEN;
 		const ttl = parseTtl(process.env.CF_TURN_TTL);
