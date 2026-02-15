@@ -18,6 +18,8 @@ function parseTtl(value: string | undefined) {
 
 type IceServer = {
 	urls?: string[] | string;
+	username?: string;
+	credential?: string;
 };
 
 function toUrlArray(urls: IceServer["urls"]) {
@@ -102,9 +104,19 @@ export async function turnRoutes(fastify: FastifyInstance) {
 					),
 				);
 
+				const turnAuthServer = servers.find((server) => {
+					const urls = toUrlArray(server.urls);
+					const hasTurnUrl = urls.some(
+						(url) => url.startsWith("turn:") || url.startsWith("turns:"),
+					);
+					return hasTurnUrl && !!server.username && !!server.credential;
+				});
+
 				reply.send({
 					stun: stunUrls,
 					turn: turnUrls,
+					turnUsername: turnAuthServer?.username ?? null,
+					turnCredential: turnAuthServer?.credential ?? null,
 				});
 				return;
 			}
