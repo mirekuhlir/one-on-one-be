@@ -3,6 +3,7 @@ import fastifyCors from "@fastify/cors";
 import Fastify from "fastify";
 import { auth } from "./lib/auth.js";
 import { healthRoutes } from "./routes/health.js";
+import { turnRoutes } from "./routes/turn.js";
 import { userRoutes } from "./routes/users.js";
 
 const fastify = Fastify({ logger: true });
@@ -60,6 +61,9 @@ await fastify.register(healthRoutes, { prefix: "/health" });
 
 // User routes - Example
 await fastify.register(userRoutes, { prefix: "/api/users" });
+
+// Public TURN credentials for FE
+await fastify.register(turnRoutes, { prefix: "/api/turn" });
 
 // Start
 const start = async () => {
