@@ -6,7 +6,7 @@ import { healthRoutes } from "./routes/health.js";
 import { turnRoutes } from "./routes/turn.js";
 import { userRoutes } from "./routes/users.js";
 
-const fastify = Fastify({ logger: true, trustProxy: true });
+const fastify = Fastify({ logger: true });
 
 // CORS
 await fastify.register(fastifyCors, {
