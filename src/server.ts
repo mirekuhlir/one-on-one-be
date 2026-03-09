@@ -1,7 +1,8 @@
 import "dotenv/config";
 import fastifyCors from "@fastify/cors";
 import Fastify from "fastify";
-import { auth } from "./lib/auth.js";
+import cron from "node-cron";
+import { auth, dbPool } from "./lib/auth.js";
 import { healthRoutes } from "./routes/health.js";
 import { turnRoutes } from "./routes/turn.js";
 import { userRoutes } from "./routes/users.js";
@@ -65,6 +66,25 @@ await fastify.register(userRoutes, { prefix: "/api/users" });
 
 // Public TURN credentials for FE
 await fastify.register(turnRoutes, { prefix: "/api/turn" });
+
+// Runs every day at midnight
+cron.schedule("0 0 * * *", async () => {
+	try {
+		fastify.log.info("Cleaning up old anonymous users...");
+
+		const result = await dbPool.query(`
+			DELETE FROM public."user"
+			WHERE "isAnonymous" = true 
+			  AND "createdAt" < NOW() - INTERVAL '24 hours';
+		`);
+
+		fastify.log.info(
+			`Cleanup complete. Number of users deleted: ${result.rowCount}`,
+		);
+	} catch (error) {
+		fastify.log.error(error, "Error during anonymous users cleanup");
+	}
+});
 
 // Start
 const start = async () => {

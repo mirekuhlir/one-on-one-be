@@ -2,10 +2,12 @@ import { betterAuth } from "better-auth";
 import { anonymous } from "better-auth/plugins";
 import { Pool } from "pg";
 
+export const dbPool = new Pool({
+	connectionString: process.env.DATABASE_URL,
+});
+
 export const auth = betterAuth({
-	database: new Pool({
-		connectionString: process.env.DATABASE_URL,
-	}),
+	database: dbPool,
 	advanced: {
 		useSecureCookies: true,
 		defaultCookieAttributes: {
