@@ -1,21 +1,26 @@
+import { fromNodeHeaders } from "better-auth/node";
 import type { FastifyInstance } from "fastify";
+import { auth } from "../lib/auth.js";
 
 export async function userRoutes(fastify: FastifyInstance) {
 	// READ (GET)
-	fastify.get("/", async (request, reply) => {
-		return { message: "List of users" }; // Placeholder
-	});
 
-	fastify.get("/:id", async (request, reply) => {
-		return { message: "User details" }; // Placeholder
-	});
+	// Endpoint for own profile
+	fastify.get("/me", async (request, reply) => {
+		// Get session from request
+		const session = await auth.api.getSession({
+			headers: fromNodeHeaders(request.headers),
+		});
 
-	// WRITE (POST, PUT, DELETE)
-	fastify.post("/", async (request, reply) => {
-		return { message: "User created" }; // Placeholder
-	});
+		// If the user does not have a valid session, deny access
+		if (!session) {
+			return reply.status(401).send({ error: "Neautorizovaný přístup" });
+		}
 
-	fastify.put("/:id", async (request, reply) => {
-		return { message: "User updated" }; // Placeholder
+	
+		return {
+			message: "Vlastní profil",
+			user: session.user,
+		};
 	});
 }
