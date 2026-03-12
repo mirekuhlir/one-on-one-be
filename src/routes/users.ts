@@ -14,12 +14,11 @@ export async function userRoutes(fastify: FastifyInstance) {
 
 		// If the user does not have a valid session, deny access
 		if (!session) {
-			return reply.status(401).send({ error: "Neautorizovaný přístup" });
+			return reply.status(401).send({ error: "Unauthorized access" });
 		}
 
 	
 		return {
-			message: "Vlastní profil",
 			user: session.user,
 		};
 	});
