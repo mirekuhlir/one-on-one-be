@@ -8,6 +8,12 @@ export const dbPool = new Pool({
 
 export const auth = betterAuth({
 	database: dbPool,
+	session: {
+		// Keep session lifetime aligned with anonymous user cleanup.
+		expiresIn: 60 * 60 * 24,
+		// Prevent rolling refresh from extending sessions past the 24h cleanup window.
+		disableSessionRefresh: true,
+	},
 	advanced: {
 		useSecureCookies: true,
 		defaultCookieAttributes: {

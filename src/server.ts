@@ -74,6 +74,7 @@ cron.schedule("0 0 * * *", async () => {
 
 		const result = await dbPool.query(`
 			DELETE FROM public."user"
+			-- Match auth session expiry so anonymous accounts live for at most 24 hours.
 			WHERE "isAnonymous" = true 
 			  AND "createdAt" < NOW() - INTERVAL '24 hours';
 		`);
