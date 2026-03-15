@@ -3,6 +3,7 @@ import fastifyCors from "@fastify/cors";
 import Fastify from "fastify";
 import cron from "node-cron";
 import { auth, dbPool } from "./lib/auth.js";
+import { initSocketServer } from "./lib/socket.js";
 import { healthRoutes } from "./routes/health.js";
 import { turnRoutes } from "./routes/turn.js";
 import { userRoutes } from "./routes/users.js";
@@ -90,6 +91,7 @@ cron.schedule("0 0 * * *", async () => {
 // Start
 const start = async () => {
 	try {
+		initSocketServer(fastify.server);
 		await fastify.listen({ port: 4000, host: "0.0.0.0" });
 		console.log("Server running on http://localhost:4000");
 	} catch (err) {
