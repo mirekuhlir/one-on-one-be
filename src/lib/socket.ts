@@ -153,6 +153,12 @@ export function initSocketServer(httpServer: HTTPServer) {
 					}
 					// Notify other players in the game room
 					io.to(result.game.id).emit("player_joined", result.game);
+
+					// For public games – room is full or changed, update lobby
+					if (!result.game.isPrivate) {
+						const { games, total } = lobbyStore.getPublicWaitingGamesPaginated(LOBBY_PAGE_SIZE, 0);
+						io.to(LOBBY_ROOM).emit("lobby_update", { games, total, page: 0 });
+					}
 				} else {
 					if (typeof callback === "function") {
 						callback({

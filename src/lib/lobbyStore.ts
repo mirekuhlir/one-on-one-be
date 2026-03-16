@@ -145,7 +145,7 @@ export const lobbyStore = {
 	): { games: LobbyGameSummary[]; total: number } {
 		const publicGames: Game[] = [];
 		for (const game of games.values()) {
-			if (!game.isPrivate && game.status === "waiting") {
+			if (!game.isPrivate && game.status === "waiting" && game.players.length < MAX_PLAYERS_PER_GAME) {
 				publicGames.push(game);
 			}
 		}
