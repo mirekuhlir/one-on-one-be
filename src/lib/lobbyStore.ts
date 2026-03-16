@@ -1,3 +1,11 @@
+/**
+ * lobbyStore – in-memory storage for game lobbies
+ *
+ * Manages creation, joining and leaving of players in game rooms.
+ * Each game has max. 2 players (one-on-one), can be public or private.
+ * Maintains socketId → game rooms index for proper cleanup on client disconnect.
+ * Used together with socket.ts for real-time lobby functionality.
+ */
 export interface Player {
 	id: string; // Session User ID
 	name: string;
@@ -14,41 +22,55 @@ export interface Game {
 	status: "waiting" | "started";
 }
 
+export interface LobbyPlayerSummary {
+	id: string;
+	name: string;
+}
+
+export interface LobbyGameSummary {
+	id: string;
+	name: string;
+	hostId: string;
+	players: LobbyPlayerSummary[];
+}
+
 const MAX_PLAYERS_PER_GAME = 2;
+export const LOBBY_PAGE_SIZE = 100;
 const games: Map<string, Game> = new Map();
 const socketIdToGames: Map<string, Set<string>> = new Map();
 
 /**
- * Adds a socket-to-game mapping to the index.
- * O(1) means constant time: lookup stays fast regardless of how many games exist.
+	Called when a player creates a game (host) or joins a game.
+  	The index is then used in socket.ts on "disconnect" to call leaveGame for each
+ 	room and clean up properly.
  */
-function addToIndex(socketId: string, gameId: string): void {
+function addToIndex(socketId: string, roomId: string): void {
 	let set = socketIdToGames.get(socketId);
 	if (!set) {
 		set = new Set();
 		socketIdToGames.set(socketId, set);
 	}
-	set.add(gameId);
+	set.add(roomId);
 }
 
 /** Removes a socket-to-game mapping and cleans up empty sets to avoid memory leaks. */
-function removeFromIndex(socketId: string, gameId: string): void {
+function removeFromIndex(socketId: string, roomId: string): void {
 	const set = socketIdToGames.get(socketId);
 	if (set) {
-		set.delete(gameId);
+		set.delete(roomId);
 		if (set.size === 0) socketIdToGames.delete(socketId);
 	}
 }
 
 export const lobbyStore = {
 	createGame(
-		gameId: string,
+		roomId: string,
 		name: string,
 		host: Player,
 		isPrivate: boolean,
 	): Game {
 		const newGame: Game = {
-			id: gameId,
+			id: roomId,
 			name,
 			hostId: host.id,
 			hostSocketId: host.socketId,
@@ -56,21 +78,21 @@ export const lobbyStore = {
 			isPrivate,
 			status: "waiting",
 		};
-		games.set(gameId, newGame);
-		addToIndex(host.socketId, gameId);
+		games.set(roomId, newGame);
+		addToIndex(host.socketId, roomId);
 		return newGame;
 	},
 
-	getGame(gameId: string): Game | undefined {
-		return games.get(gameId);
+	getGame(roomId: string): Game | undefined {
+		return games.get(roomId);
 	},
 
-	removeGame(gameId: string): boolean {
-		return games.delete(gameId);
+	removeGame(roomId: string): boolean {
+		return games.delete(roomId);
 	},
 
-	joinGame(gameId: string, player: Player): { game: Game | null; error?: string } {
-		const game = games.get(gameId);
+	joinGame(roomId: string, player: Player): { game: Game | null; error?: string } {
+		const game = games.get(roomId);
 		if (!game) {
 			return { game: null, error: "Game not found. It may have been closed if the host disconnected." };
 		}
@@ -85,22 +107,22 @@ export const lobbyStore = {
 				return { game: null, error: "Game is full." };
 			}
 			game.players.push(player);
-			addToIndex(player.socketId, gameId);
+			addToIndex(player.socketId, roomId);
 		}
 		return { game };
 	},
 
-	leaveGame(gameId: string, socketId: string): Game | null {
-		const game = games.get(gameId);
+	leaveGame(roomId: string, socketId: string): Game | null {
+		const game = games.get(roomId);
 		if (game) {
-			removeFromIndex(socketId, gameId);
+			removeFromIndex(socketId, roomId);
 			game.players = game.players.filter((p) => p.socketId !== socketId);
 			// If host leaves or no players remain, the game is closed
 			if (game.players.length === 0 || game.hostSocketId === socketId) {
 				for (const p of game.players) {
-					removeFromIndex(p.socketId, gameId);
+					removeFromIndex(p.socketId, roomId);
 				}
-				games.delete(gameId);
+				games.delete(roomId);
 				return null; // Indicates game was deleted
 			}
 			return game;
@@ -108,8 +130,8 @@ export const lobbyStore = {
 		return null;
 	},
 
-	startGame(gameId: string, requestorId: string): Game | null {
-		const game = games.get(gameId);
+	startGame(roomId: string, requestorId: string): Game | null {
+		const game = games.get(roomId);
 		if (game && game.status === "waiting" && game.hostId === requestorId) {
 			game.status = "started";
 			return game;
@@ -117,21 +139,33 @@ export const lobbyStore = {
 		return null;
 	},
 
-	getPublicWaitingGames(): Game[] {
+	getPublicWaitingGamesPaginated(
+		limit = LOBBY_PAGE_SIZE,
+		offset = 0,
+	): { games: LobbyGameSummary[]; total: number } {
 		const publicGames: Game[] = [];
 		for (const game of games.values()) {
 			if (!game.isPrivate && game.status === "waiting") {
 				publicGames.push(game);
 			}
 		}
-		return publicGames;
+		publicGames.sort((a, b) => a.id.localeCompare(b.id));
+		const total = publicGames.length;
+		const slice = publicGames.slice(offset, offset + limit);
+		const lobbyGames: LobbyGameSummary[] = slice.map((g) => ({
+			id: g.id,
+			name: g.name,
+			hostId: g.hostId,
+			players: g.players.map((p) => ({ id: p.id, name: p.name })),
+		}));
+		return { games: lobbyGames, total };
 	},
 
 	getGamesBySocketId(socketId: string): Game[] {
-		const gameIds = socketIdToGames.get(socketId);
-		if (!gameIds) return [];
+		const roomIds = socketIdToGames.get(socketId);
+		if (!roomIds) return [];
 		const result: Game[] = [];
-		for (const id of gameIds) {
+		for (const id of roomIds) {
 			const g = games.get(id);
 			if (g) result.push(g);
 		}

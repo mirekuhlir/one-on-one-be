@@ -2,7 +2,7 @@ import { fromNodeHeaders } from "better-auth/node";
 import type { Server as HTTPServer } from "node:http";
 import { Server as SocketIOServer } from "socket.io";
 import { auth } from "./auth.js";
-import { type Game, lobbyStore } from "./lobbyStore.js";
+import { type Game, LOBBY_PAGE_SIZE, lobbyStore } from "./lobbyStore.js";
 
 interface CustomSocketData {
 	user?: {
@@ -62,9 +62,19 @@ export function initSocketServer(httpServer: HTTPServer) {
 	io.on("connection", (socket) => {
 		console.log(`Socket connected: ${socket.id} (User: ${socket.data.user?.id})`);
 
-		socket.on("join_lobby", () => {
+		socket.on("join_lobby", (data?: { page?: number }) => {
 			socket.join(LOBBY_ROOM);
-			socket.emit("lobby_update", lobbyStore.getPublicWaitingGames());
+			const page = data?.page ?? 0;
+			const offset = page * LOBBY_PAGE_SIZE;
+			const { games, total } = lobbyStore.getPublicWaitingGamesPaginated(LOBBY_PAGE_SIZE, offset);
+			socket.emit("lobby_update", { games, total, page });
+		});
+
+		socket.on("request_lobby_page", (data: { page: number }) => {
+			const page = Math.max(0, data?.page ?? 0);
+			const offset = page * LOBBY_PAGE_SIZE;
+			const { games, total } = lobbyStore.getPublicWaitingGamesPaginated(LOBBY_PAGE_SIZE, offset);
+			socket.emit("lobby_update", { games, total, page });
 		});
 
 		socket.on("leave_lobby", () => {
@@ -75,45 +85,46 @@ export function initSocketServer(httpServer: HTTPServer) {
 			"create_game",
 			(
 				data: { name: string; isPrivate: boolean },
-				callback: (response: { gameId: string }) => void,
+				callback: (response: { roomId: string }) => void,
 			) => {
 				const user = socket.data.user;
 				if (!user) return;
 				const playerName = user.name || `Guest ${user.id.substring(0, 4)}`;
 
-				const ROOM_CODE_ALPHABET = 'BCDFGHJKLMNPQRSTVWXZ23456789';
+				const ROOM_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 				const ROOM_CODE_LENGTH = 4;
-				let gameId = '';
+				let roomId = '';
 				let isUnique = false;
 
 				while (!isUnique) {
-					gameId = '';
+					roomId = '';
 					for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
-						gameId += ROOM_CODE_ALPHABET.charAt(Math.floor(Math.random() * ROOM_CODE_ALPHABET.length));
+						roomId += ROOM_CODE_ALPHABET.charAt(Math.floor(Math.random() * ROOM_CODE_ALPHABET.length));
 					}
 					// Verify uniqueness against active games
-					if (!lobbyStore.getGame(gameId)) {
+					if (!lobbyStore.getGame(roomId)) {
 						isUnique = true;
 					}
 				}
 
 				const game = lobbyStore.createGame(
-					gameId,
+					roomId,
 					data?.name || "Game",
 					{ id: user.id, name: playerName, socketId: socket.id },
 					data?.isPrivate || false,
 				);
 
-				socket.join(gameId);
+				socket.join(roomId);
 
 				if (typeof callback === "function") {
-					callback({ gameId: game.id });
+					callback({ roomId: game.id });
 				} else {
 					socket.emit("game_created", game.id);
 				}
 
 				if (!game.isPrivate) {
-					io.to(LOBBY_ROOM).emit("lobby_update", lobbyStore.getPublicWaitingGames());
+					const { games, total } = lobbyStore.getPublicWaitingGamesPaginated(LOBBY_PAGE_SIZE, 0);
+					io.to(LOBBY_ROOM).emit("lobby_update", { games, total, page: 0 });
 				}
 			},
 		);
@@ -121,15 +132,15 @@ export function initSocketServer(httpServer: HTTPServer) {
 		socket.on(
 			"join_game",
 			(
-				data: { gameId: string },
+				data: { roomId: string },
 				callback: (response: { success: boolean; game?: Game; error?: string }) => void,
 			) => {
 				const user = socket.data.user;
 				if (!user) return;
 				const playerName = user.name || `Guest ${user.id.substring(0, 4)}`;
 				
-				const gameId = data?.gameId?.toUpperCase();
-				const result = lobbyStore.joinGame(gameId, {
+				const roomId = data?.roomId?.toUpperCase();
+				const result = lobbyStore.joinGame(roomId, {
 					id: user.id,
 					name: playerName,
 					socketId: socket.id,
@@ -153,46 +164,48 @@ export function initSocketServer(httpServer: HTTPServer) {
 			},
 		);
 
-		socket.on("leave_game", (data: { gameId: string }) => {
-			if (!data?.gameId) return;
+		socket.on("leave_game", (data: { roomId: string }) => {
+			if (!data?.roomId) return;
 
 			const user = socket.data.user;
 			if (!user) return;
-			socket.leave(data.gameId);
-			const game = lobbyStore.getGame(data.gameId);
-			const remainingGame = lobbyStore.leaveGame(data.gameId, socket.id);
+			socket.leave(data.roomId);
+			const game = lobbyStore.getGame(data.roomId);
+			const remainingGame = lobbyStore.leaveGame(data.roomId, socket.id);
 
 			if (game && !game.isPrivate) {
 				// If game was public and is now gone or changed, update lobby
-				io.to(LOBBY_ROOM).emit("lobby_update", lobbyStore.getPublicWaitingGames());
+				const { games, total } = lobbyStore.getPublicWaitingGamesPaginated(LOBBY_PAGE_SIZE, 0);
+				io.to(LOBBY_ROOM).emit("lobby_update", { games, total, page: 0 });
 			}
 
 			if (remainingGame) {
-				io.to(data.gameId).emit("player_left", remainingGame);
+				io.to(data.roomId).emit("player_left", remainingGame);
 			} else if (game) {
 				// Game was cancelled (host left or no players remaining)
-				io.to(data.gameId).emit("game_closed");
-				io.in(data.gameId).socketsLeave(data.gameId);
+				io.to(data.roomId).emit("game_closed");
+				io.in(data.roomId).socketsLeave(data.roomId);
 			}
 		});
 
 		socket.on(
 			"start_game",
 			(
-				data: { gameId: string },
+				data: { roomId: string },
 				callback: (response: { success: boolean; error?: string }) => void,
 			) => {
-			if (!data?.gameId) return;
+			if (!data?.roomId) return;
 
 			const user = socket.data.user;
 			if (!user) return;
-			const game = lobbyStore.startGame(data.gameId, user.id);
+			const game = lobbyStore.startGame(data.roomId, user.id);
 			if (game) {
 				io.to(game.id).emit("game_started", game);
 
 				if (!game.isPrivate) {
 					// Game started, so it shouldn't be in the public waiting list anymore
-					io.to(LOBBY_ROOM).emit("lobby_update", lobbyStore.getPublicWaitingGames());
+					const { games, total } = lobbyStore.getPublicWaitingGamesPaginated(LOBBY_PAGE_SIZE, 0);
+					io.to(LOBBY_ROOM).emit("lobby_update", { games, total, page: 0 });
 				}
 
 				if (typeof callback === "function") {
@@ -229,7 +242,8 @@ export function initSocketServer(httpServer: HTTPServer) {
 			}
 
 			if (lobbyChanged) {
-				io.to(LOBBY_ROOM).emit("lobby_update", lobbyStore.getPublicWaitingGames());
+				const { games, total } = lobbyStore.getPublicWaitingGamesPaginated(LOBBY_PAGE_SIZE, 0);
+				io.to(LOBBY_ROOM).emit("lobby_update", { games, total, page: 0 });
 			}
 		});
 	});
