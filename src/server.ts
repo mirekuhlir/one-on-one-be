@@ -2,19 +2,25 @@ import "dotenv/config";
 import fastifyCors from "@fastify/cors";
 import Fastify from "fastify";
 import cron from "node-cron";
-import { auth, dbPool } from "./lib/auth.js";
+import {
+	dbPool,
+	getConfiguredAuthProviders,
+	proxyAuthRequest,
+	sendAuthResponse,
+} from "./lib/auth.js";
+import { assertAuthRuntimeConfig, authEnv } from "./lib/env.js";
 import { initSocketServer } from "./lib/socket.js";
 import { healthRoutes } from "./routes/health.js";
 import { turnRoutes } from "./routes/turn.js";
 import { userRoutes } from "./routes/users.js";
 
-const fastify = Fastify({ logger: true });
+assertAuthRuntimeConfig();
+
+const fastify = Fastify({ logger: true, trustProxy: true });
 
 // CORS
 await fastify.register(fastifyCors, {
-	origin: process.env.CLIENT_ORIGIN
-		? process.env.CLIENT_ORIGIN.split(",").map((origin) => origin.trim())
-		: false,
+	origin: authEnv.clientOrigins.length > 0 ? authEnv.clientOrigins : false,
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 	credentials: true,
@@ -27,28 +33,14 @@ fastify.route({
 	url: "/api/auth/*",
 	async handler(request, reply) {
 		try {
-			const protocol = request.protocol || "https";
-			const url = new URL(request.url, `${protocol}://${request.headers.host}`);
-
-			const headers = new Headers();
-			Object.entries(request.headers).forEach(([key, value]) => {
-				if (value) headers.append(key, value.toString());
-			});
-
-			const req = new Request(url.toString(), {
+			const response = await proxyAuthRequest({
 				method: request.method,
-				headers,
-				...(request.body ? { body: JSON.stringify(request.body) } : {}),
+				path: request.url,
+				headers: request.headers,
+				body: request.body,
 			});
 
-			const response = await auth.handler(req);
-
-			reply.status(response.status);
-			// biome-ignore lint/suspicious/useIterableCallbackReturn: Map headers correctly
-			response.headers.forEach((value, key) => reply.header(key, value));
-
-			const text = await response.text();
-			reply.send(text || null);
+			return sendAuthResponse(reply, response);
 		} catch (error) {
 			fastify.log.error(error, "Authentication Error");
 			reply.status(500).send({
@@ -93,7 +85,14 @@ const start = async () => {
 	try {
 		initSocketServer(fastify.server);
 		await fastify.listen({ port: 4000, host: "0.0.0.0" });
-		console.log("Server running on http://localhost:4000");
+		fastify.log.info(
+			{
+				enabledSocialProviders: getConfiguredAuthProviders()
+					.filter((provider) => provider.enabled)
+					.map((provider) => provider.id),
+			},
+			"Server running on http://localhost:4000",
+		);
 	} catch (err) {
 		fastify.log.error(err);
 		process.exit(1);

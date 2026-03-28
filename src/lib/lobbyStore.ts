@@ -91,17 +91,26 @@ export const lobbyStore = {
 		return games.delete(roomId);
 	},
 
-	joinGame(roomId: string, player: Player): { game: Game | null; error?: string } {
+	joinGame(
+		roomId: string,
+		player: Player,
+	): { game: Game | null; error?: string } {
 		const game = games.get(roomId);
 		if (!game) {
-			return { game: null, error: "Game not found. It may have been closed if the host disconnected." };
+			return {
+				game: null,
+				error:
+					"Game not found. It may have been closed if the host disconnected.",
+			};
 		}
 		if (game.status !== "waiting") {
 			return { game: null, error: "Game has already started." };
 		}
-		
-		const isAlreadyInGame = game.players.some((p) => p.socketId === player.socketId);
-		
+
+		const isAlreadyInGame = game.players.some(
+			(p) => p.socketId === player.socketId,
+		);
+
 		if (!isAlreadyInGame) {
 			if (game.players.length >= MAX_PLAYERS_PER_GAME) {
 				return { game: null, error: "Game is full." };
@@ -145,7 +154,11 @@ export const lobbyStore = {
 	): { games: LobbyGameSummary[]; total: number } {
 		const publicGames: Game[] = [];
 		for (const game of games.values()) {
-			if (!game.isPrivate && game.status === "waiting" && game.players.length < MAX_PLAYERS_PER_GAME) {
+			if (
+				!game.isPrivate &&
+				game.status === "waiting" &&
+				game.players.length < MAX_PLAYERS_PER_GAME
+			) {
 				publicGames.push(game);
 			}
 		}
