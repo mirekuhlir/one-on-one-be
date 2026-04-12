@@ -11,8 +11,13 @@ import {
 import { assertAuthRuntimeConfig, authEnv } from "./lib/env.js";
 import { initSocketServer } from "./lib/socket.js";
 import { healthRoutes } from "./routes/health.js";
+import { purchaseRoutes } from "./routes/purchases.js";
+import { storeRoutes } from "./routes/store.js";
 import { turnRoutes } from "./routes/turn.js";
 import { userRoutes } from "./routes/users.js";
+
+// Boots the HTTP server, wires auth and domain routes together, and schedules
+// the background cleanup needed to keep anonymous accounts short-lived.
 
 assertAuthRuntimeConfig();
 
@@ -27,7 +32,8 @@ await fastify.register(fastifyCors, {
 	maxAge: 86400,
 });
 
-// Better Auth catch-all route
+// Proxies Better Auth requests through this backend so cookies, headers, and
+// deployment-specific routing stay in one place.
 fastify.route({
 	method: ["GET", "POST"],
 	url: "/api/auth/*",
@@ -54,13 +60,18 @@ fastify.route({
 // Health check
 await fastify.register(healthRoutes, { prefix: "/health" });
 
-// User routes - Example
+// User routes
 await fastify.register(userRoutes, { prefix: "/api/users" });
+
+// Store and purchases
+await fastify.register(storeRoutes, { prefix: "/api/store" });
+await fastify.register(purchaseRoutes, { prefix: "/api/purchases" });
 
 // Public TURN credentials for FE
 await fastify.register(turnRoutes, { prefix: "/api/turn" });
 
-// Runs every day at midnight
+// Removes expired anonymous accounts on the same lifetime used by auth session
+// expiry, preventing abandoned guest users from accumulating forever.
 cron.schedule("0 0 * * *", async () => {
 	try {
 		fastify.log.info("Cleaning up old anonymous users...");
@@ -80,7 +91,8 @@ cron.schedule("0 0 * * *", async () => {
 	}
 });
 
-// Start
+// Starts the HTTP and websocket servers only after route registration succeeds,
+// so the app never accepts traffic in a partially initialized state.
 const start = async () => {
 	try {
 		initSocketServer(fastify.server);

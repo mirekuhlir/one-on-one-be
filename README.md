@@ -51,3 +51,17 @@ Run `npm run db:export` to refresh:
 - `database/pg_settings.txt`
 
 The command reads `DATABASE_URL` from `.env` and requires PostgreSQL CLI tools with `pg_dump` and `psql` available on `PATH`.
+
+## Database migrations
+
+Run a specific SQL migration with:
+
+`npm run db:migrate -- database/migrations/<file>.sql`
+
+Example:
+
+`npm run db:migrate -- database/migrations/20260412_10-30-00_create_commerce_schema.sql`
+
+The command reads `DATABASE_URL` from `.env`, executes the SQL file through `psql`, stops on the first error, and wraps the migration in a single transaction.
+
+The commerce migration is written to be idempotent, so running it repeatedly should not fail when the tables, constraints, or indexes already exist.

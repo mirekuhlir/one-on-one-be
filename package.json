@@ -5,7 +5,8 @@
 	"scripts": {
 		"dev": "tsx watch src/server.ts",
 		"build": "tsc",
-		"db:export": "tsx scripts/export-db-artifacts.ts",
+		"db:migrate": "tsx scripts/run-db-migration.ts",
+		"db:dump": "tsx scripts/export-db-artifacts.ts",
 		"start": "node dist/server.js",
 		"lint": "biome lint .",
 		"format": "biome format . --write",
