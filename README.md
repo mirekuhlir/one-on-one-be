@@ -42,3 +42,12 @@ Backend authentication is handled by Better Auth behind `/api/auth/*` with thin 
 - `POST /api/auth/reset-password`
 - `GET /api/auth/verify-email`
 - `POST /api/auth/link-social`
+
+## Database exports
+
+Run `npm run db:export` to refresh:
+
+- `database/db_schema.sql`
+- `database/pg_settings.txt`
+
+The command reads `DATABASE_URL` from `.env` and requires PostgreSQL CLI tools with `pg_dump` and `psql` available on `PATH`.

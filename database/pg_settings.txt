@@ -10,15 +10,15 @@
  archive_mode                                | off                                             | Allows archiving of WAL files using "archive_command".
  archive_timeout                             | 0                                               | Sets the amount of time to wait before forcing a switch to the next WAL file.
  array_nulls                                 | on                                              | Enable input of NULL elements in arrays.
- authentication_timeout                      | 1min                                            | Sets the maximum allowed time to complete client authentication.
+ authentication_timeout                      | 60                                              | Sets the maximum allowed time to complete client authentication.
  autovacuum                                  | on                                              | Starts the autovacuum subprocess.
  autovacuum_analyze_scale_factor             | 0.1                                             | Number of tuple inserts, updates, or deletes prior to analyze as a fraction of reltuples.
  autovacuum_analyze_threshold                | 50                                              | Minimum number of tuple inserts, updates, or deletes prior to analyze.
  autovacuum_freeze_max_age                   | 200000000                                       | Age at which to autovacuum a table to prevent transaction ID wraparound.
  autovacuum_max_workers                      | 3                                               | Sets the maximum number of simultaneously running autovacuum worker processes.
  autovacuum_multixact_freeze_max_age         | 400000000                                       | Multixact age at which to autovacuum a table to prevent multixact wraparound.
- autovacuum_naptime                          | 1min                                            | Time to sleep between autovacuum runs.
- autovacuum_vacuum_cost_delay                | 2ms                                             | Vacuum cost delay in milliseconds, for autovacuum.
+ autovacuum_naptime                          | 60                                              | Time to sleep between autovacuum runs.
+ autovacuum_vacuum_cost_delay                | 2                                               | Vacuum cost delay in milliseconds, for autovacuum.
  autovacuum_vacuum_cost_limit                | -1                                              | Vacuum cost amount available before napping, for autovacuum.
  autovacuum_vacuum_insert_scale_factor       | 0.2                                             | Number of tuple inserts prior to vacuum as a fraction of reltuples.
  autovacuum_vacuum_insert_threshold          | 1000                                            | Minimum number of tuple inserts prior to vacuum, or -1 to disable insert vacuums.
@@ -28,8 +28,8 @@
  backend_flush_after                         | 0                                               | Number of pages after which previously performed writes are flushed to disk.
  backslash_quote                             | safe_encoding                                   | Sets whether "\'" is allowed in string literals.
  backtrace_functions                         |                                                 | Log backtrace for errors in these functions.
- bgwriter_delay                              | 200ms                                           | Background writer sleep time between rounds.
- bgwriter_flush_after                        | 512kB                                           | Number of pages after which previously performed writes are flushed to disk.
+ bgwriter_delay                              | 200                                             | Background writer sleep time between rounds.
+ bgwriter_flush_after                        | 64                                              | Number of pages after which previously performed writes are flushed to disk.
  bgwriter_lru_maxpages                       | 100                                             | Background writer maximum number of LRU pages to flush per round.
  bgwriter_lru_multiplier                     | 2                                               | Multiple of the average buffer usage to free per round.
  block_size                                  | 8192                                            | Shows the size of a disk block.
@@ -38,16 +38,16 @@
  bytea_output                                | hex                                             | Sets the output format for bytea.
  check_function_bodies                       | on                                              | Check routine bodies during CREATE FUNCTION and CREATE PROCEDURE.
  checkpoint_completion_target                | 0.9                                             | Time spent flushing dirty buffers during checkpoint, as fraction of checkpoint interval.
- checkpoint_flush_after                      | 256kB                                           | Number of pages after which previously performed writes are flushed to disk.
- checkpoint_timeout                          | 5min                                            | Sets the maximum time between automatic WAL checkpoints.
- checkpoint_warning                          | 30s                                             | Sets the maximum time before warning if checkpoints triggered by WAL volume happen too frequently.
+ checkpoint_flush_after                      | 32                                              | Number of pages after which previously performed writes are flushed to disk.
+ checkpoint_timeout                          | 300                                             | Sets the maximum time between automatic WAL checkpoints.
+ checkpoint_warning                          | 30                                              | Sets the maximum time before warning if checkpoints triggered by WAL volume happen too frequently.
  client_connection_check_interval            | 0                                               | Sets the time interval between checks for disconnection while running queries.
  client_encoding                             | UTF8                                            | Sets the client's character set encoding.
  client_min_messages                         | notice                                          | Sets the message levels that are sent to the client.
  cluster_name                                |                                                 | Sets the name of the cluster, which is included in the process title.
  commit_delay                                | 0                                               | Sets the delay in microseconds between transaction commit and flushing WAL to disk.
  commit_siblings                             | 5                                               | Sets the minimum number of concurrent open transactions required before performing "commit_delay".
- commit_timestamp_buffers                    | 256kB                                           | Sets the size of the dedicated buffer pool used for the commit timestamp cache.
+ commit_timestamp_buffers                    | 32                                              | Sets the size of the dedicated buffer pool used for the commit timestamp cache.
  compute_query_id                            | auto                                            | Enables in-core computation of query identifiers.
  config_file                                 | /var/lib/postgresql/data/pgdata/postgresql.conf | Sets the server's main configuration file.
  constraint_exclusion                        | partition                                       | Enables the planner to use constraints to optimize queries.
@@ -61,7 +61,7 @@
  data_directory_mode                         | 0700                                            | Shows the mode of the data directory.
  data_sync_retry                             | off                                             | Whether to continue running after a failure to sync data files.
  DateStyle                                   | ISO, MDY                                        | Sets the display format for date and time values.
- deadlock_timeout                            | 1s                                              | Sets the time to wait on a lock before checking for deadlock.
+ deadlock_timeout                            | 1000                                            | Sets the time to wait on a lock before checking for deadlock.
  debug_assertions                            | off                                             | Shows whether the running server has assertion checks enabled.
  debug_discard_caches                        | 0                                               | Aggressively flush system caches for debugging purposes.
  debug_io_direct                             |                                                 | Use direct I/O for file access.
@@ -81,7 +81,7 @@
  default_transaction_read_only               | off                                             | Sets the default read-only status of new transactions.
  dynamic_library_path                        | $libdir                                         | Sets the path for dynamically loadable modules.
  dynamic_shared_memory_type                  | posix                                           | Selects the dynamic shared memory implementation used.
- effective_cache_size                        | 4GB                                             | Sets the planner's assumption about the total size of the data caches.
+ effective_cache_size                        | 524288                                          | Sets the planner's assumption about the total size of the data caches.
  effective_io_concurrency                    | 1                                               | Number of simultaneous requests that can be handled efficiently by the disk subsystem.
  enable_async_append                         | on                                              | Enables the planner's use of async append plans.
  enable_bitmapscan                           | on                                              | Enables the planner's use of bitmap-scan plans.
@@ -123,14 +123,14 @@
  geqo_selection_bias                         | 2                                               | GEQO: selective pressure within the population.
  geqo_threshold                              | 12                                              | Sets the threshold of FROM items beyond which GEQO is used.
  gin_fuzzy_search_limit                      | 0                                               | Sets the maximum allowed result for exact search by GIN.
- gin_pending_list_limit                      | 4MB                                             | Sets the maximum size of the pending list for GIN index.
+ gin_pending_list_limit                      | 4096                                            | Sets the maximum size of the pending list for GIN index.
  gss_accept_delegation                       | off                                             | Sets whether GSSAPI delegation should be accepted from the client.
  hash_mem_multiplier                         | 2                                               | Multiple of "work_mem" to use for hash tables.
  hba_file                                    | /var/lib/postgresql/data/pgdata/pg_hba.conf     | Sets the server's "hba" configuration file.
  hot_standby                                 | on                                              | Allows connections and queries during recovery.
  hot_standby_feedback                        | off                                             | Allows feedback from a hot standby to the primary that will avoid query conflicts.
- huge_page_size                              | 0                                               | The size of huge page that should be requested.
  huge_pages                                  | try                                             | Use of huge pages on Linux or Windows.
+ huge_page_size                              | 0                                               | The size of huge page that should be requested.
  huge_pages_status                           | off                                             | Indicates the status of huge pages.
  icu_validation_level                        | warning                                         | Log level for reporting invalid ICU locale strings.
  ident_file                                  | /var/lib/postgresql/data/pgdata/pg_ident.conf   | Sets the server's "ident" configuration file.
@@ -142,7 +142,7 @@
  in_hot_standby                              | off                                             | Shows whether hot standby is currently active.
  integer_datetimes                           | on                                              | Shows whether datetimes are integer based.
  IntervalStyle                               | postgres                                        | Sets the display format for interval values.
- io_combine_limit                            | 128kB                                           | Limit on the size of data reads and writes.
+ io_combine_limit                            | 16                                              | Limit on the size of data reads and writes.
  jit                                         | on                                              | Allow JIT compilation.
  jit_above_cost                              | 100000                                          | Perform JIT compilation if query is more expensive.
  jit_debugging_support                       | off                                             | Register JIT-compiled functions with debugger.
@@ -161,10 +161,10 @@
  lc_numeric                                  | en_US.utf8                                      | Sets the locale for formatting numbers.
  lc_time                                     | en_US.utf8                                      | Sets the locale for formatting date and time values.
  listen_addresses                            | *                                               | Sets the host name or IP address(es) to listen to.
- lo_compat_privileges                        | off                                             | Enables backward compatibility mode for privilege checks on large objects.
  local_preload_libraries                     |                                                 | Lists unprivileged shared libraries to preload into each backend.
  lock_timeout                                | 0                                               | Sets the maximum allowed duration of any wait for a lock.
- log_autovacuum_min_duration                 | 10min                                           | Sets the minimum execution time above which autovacuum actions will be logged.
+ lo_compat_privileges                        | off                                             | Enables backward compatibility mode for privilege checks on large objects.
+ log_autovacuum_min_duration                 | 600000                                          | Sets the minimum execution time above which autovacuum actions will be logged.
  log_checkpoints                             | on                                              | Logs each checkpoint.
  log_connections                             | off                                             | Logs each successful connection.
  log_destination                             | stderr                                          | Sets the destination for server log output.
@@ -175,7 +175,9 @@
  log_executor_stats                          | off                                             | Writes executor performance statistics to the server log.
  log_file_mode                               | 0600                                            | Sets the file permissions for log files.
  log_filename                                | postgresql-%Y-%m-%d_%H%M%S.log                  | Sets the file name pattern for log files.
+ logging_collector                           | off                                             | Start a subprocess to capture stderr, csvlog and/or jsonlog into log files.
  log_hostname                                | off                                             | Logs the host name in the connection logs.
+ logical_decoding_work_mem                   | 65536                                           | Sets the maximum memory to be used for logical decoding.
  log_line_prefix                             | %m [%p]                                         | Controls information prefixed to each log line.
  log_lock_waits                              | off                                             | Logs long lock waits.
  log_min_duration_sample                     | -1                                              | Sets the minimum execution time above which a sample of statements will be logged. Sampling is determined by log_statement_sample_rate.
@@ -188,9 +190,9 @@
  log_planner_stats                           | off                                             | Writes planner performance statistics to the server log.
  log_recovery_conflict_waits                 | off                                             | Logs standby recovery conflict waits.
  log_replication_commands                    | off                                             | Logs each replication command.
- log_rotation_age                            | 1d                                              | Sets the amount of time to wait before forcing log file rotation.
- log_rotation_size                           | 10MB                                            | Sets the maximum size a log file can reach before being rotated.
- log_startup_progress_interval               | 10s                                             | Time between progress updates for long-running startup operations.
+ log_rotation_age                            | 1440                                            | Sets the amount of time to wait before forcing log file rotation.
+ log_rotation_size                           | 10240                                           | Sets the maximum size a log file can reach before being rotated.
+ log_startup_progress_interval               | 10000                                           | Time between progress updates for long-running startup operations.
  log_statement                               | none                                            | Sets the type of statements logged.
  log_statement_sample_rate                   | 1                                               | Fraction of statements exceeding "log_min_duration_sample" to be logged.
  log_statement_stats                         | off                                             | Writes cumulative performance statistics to the server log.
@@ -198,10 +200,8 @@
  log_timezone                                | Etc/UTC                                         | Sets the time zone to use in log messages.
  log_transaction_sample_rate                 | 0                                               | Sets the fraction of transactions from which to log all statements.
  log_truncate_on_rotation                    | off                                             | Truncate existing log files of same name during log rotation.
- logging_collector                           | off                                             | Start a subprocess to capture stderr, csvlog and/or jsonlog into log files.
- logical_decoding_work_mem                   | 64MB                                            | Sets the maximum memory to be used for logical decoding.
  maintenance_io_concurrency                  | 10                                              | A variant of "effective_io_concurrency" that is used for maintenance work.
- maintenance_work_mem                        | 64MB                                            | Sets the maximum memory to be used for maintenance operations.
+ maintenance_work_mem                        | 65536                                           | Sets the maximum memory to be used for maintenance operations.
  max_connections                             | 100                                             | Sets the maximum number of concurrent connections.
  max_files_per_process                       | 1000                                            | Sets the maximum number of simultaneously open files for each server process.
  max_function_args                           | 100                                             | Shows the maximum number of function arguments.
@@ -220,20 +220,20 @@
  max_prepared_transactions                   | 0                                               | Sets the maximum number of simultaneously prepared transactions.
  max_replication_slots                       | 10                                              | Sets the maximum number of simultaneously defined replication slots.
  max_slot_wal_keep_size                      | -1                                              | Sets the maximum WAL size that can be reserved by replication slots.
- max_stack_depth                             | 2MB                                             | Sets the maximum stack depth, in kilobytes.
- max_standby_archive_delay                   | 30s                                             | Sets the maximum delay before canceling queries when a hot standby server is processing archived WAL data.
- max_standby_streaming_delay                 | 30s                                             | Sets the maximum delay before canceling queries when a hot standby server is processing streamed WAL data.
+ max_stack_depth                             | 2048                                            | Sets the maximum stack depth, in kilobytes.
+ max_standby_archive_delay                   | 30000                                           | Sets the maximum delay before canceling queries when a hot standby server is processing archived WAL data.
+ max_standby_streaming_delay                 | 30000                                           | Sets the maximum delay before canceling queries when a hot standby server is processing streamed WAL data.
  max_sync_workers_per_subscription           | 2                                               | Maximum number of table synchronization workers per subscription.
  max_wal_senders                             | 10                                              | Sets the maximum number of simultaneously running WAL sender processes.
- max_wal_size                                | 1GB                                             | Sets the WAL size that triggers a checkpoint.
+ max_wal_size                                | 1024                                            | Sets the WAL size that triggers a checkpoint.
  max_worker_processes                        | 8                                               | Maximum number of concurrent worker processes.
  min_dynamic_shared_memory                   | 0                                               | Amount of dynamic shared memory reserved at startup.
- min_parallel_index_scan_size                | 512kB                                           | Sets the minimum amount of index data for a parallel scan.
- min_parallel_table_scan_size                | 8MB                                             | Sets the minimum amount of table data for a parallel scan.
- min_wal_size                                | 80MB                                            | Sets the minimum size to shrink the WAL to.
- multixact_member_buffers                    | 256kB                                           | Sets the size of the dedicated buffer pool used for the MultiXact member cache.
- multixact_offset_buffers                    | 128kB                                           | Sets the size of the dedicated buffer pool used for the MultiXact offset cache.
- notify_buffers                              | 128kB                                           | Sets the size of the dedicated buffer pool used for the LISTEN/NOTIFY message cache.
+ min_parallel_index_scan_size                | 64                                              | Sets the minimum amount of index data for a parallel scan.
+ min_parallel_table_scan_size                | 1024                                            | Sets the minimum amount of table data for a parallel scan.
+ min_wal_size                                | 80                                              | Sets the minimum size to shrink the WAL to.
+ multixact_member_buffers                    | 32                                              | Sets the size of the dedicated buffer pool used for the MultiXact member cache.
+ multixact_offset_buffers                    | 16                                              | Sets the size of the dedicated buffer pool used for the MultiXact offset cache.
+ notify_buffers                              | 16                                              | Sets the size of the dedicated buffer pool used for the LISTEN/NOTIFY message cache.
  parallel_leader_participation               | on                                              | Controls whether Gather and Gather Merge also run subplans.
  parallel_setup_cost                         | 1000                                            | Sets the planner's estimate of the cost of starting up worker processes for parallel query.
  parallel_tuple_cost                         | 0.1                                             | Sets the planner's estimate of the cost of passing each tuple (row) from worker to leader backend.
@@ -272,18 +272,18 @@
  row_security                                | on                                              | Enable row security.
  scram_iterations                            | 4096                                            | Sets the iteration count for SCRAM secret generation.
  search_path                                 | "$user", public                                 | Sets the schema search order for names that are not schema-qualified.
- segment_size                                | 1GB                                             | Shows the number of pages per disk file.
+ segment_size                                | 131072                                          | Shows the number of pages per disk file.
  send_abort_for_crash                        | off                                             | Send SIGABRT not SIGQUIT to child processes after backend crash.
  send_abort_for_kill                         | off                                             | Send SIGABRT not SIGKILL to stuck child processes.
  seq_page_cost                               | 1                                               | Sets the planner's estimate of the cost of a sequentially fetched disk page.
- serializable_buffers                        | 256kB                                           | Sets the size of the dedicated buffer pool used for the serializable transaction cache.
+ serializable_buffers                        | 32                                              | Sets the size of the dedicated buffer pool used for the serializable transaction cache.
  server_encoding                             | UTF8                                            | Shows the server (database) character set encoding.
  server_version                              | 17.7 (Debian 17.7-3.pgdg13+1)                   | Shows the server version.
  server_version_num                          | 170007                                          | Shows the server version as an integer.
  session_preload_libraries                   |                                                 | Lists shared libraries to preload into each backend.
  session_replication_role                    | origin                                          | Sets the session's behavior for triggers and rewrite rules.
- shared_buffers                              | 128MB                                           | Sets the number of shared memory buffers used by the server.
- shared_memory_size                          | 146MB                                           | Shows the size of the server's main shared memory area (rounded up to the nearest MB).
+ shared_buffers                              | 16384                                           | Sets the number of shared memory buffers used by the server.
+ shared_memory_size                          | 146                                             | Shows the size of the server's main shared memory area (rounded up to the nearest MB).
  shared_memory_size_in_huge_pages            | 73                                              | Shows the number of huge pages needed for the main shared memory area.
  shared_memory_type                          | mmap                                            | Selects the shared memory implementation used for the main shared memory region.
  shared_preload_libraries                    | pg_stat_statements                              | Lists shared libraries to preload into server.
@@ -305,14 +305,14 @@
  standard_conforming_strings                 | on                                              | Causes '...' strings to treat backslashes literally.
  statement_timeout                           | 0                                               | Sets the maximum allowed duration of any statement.
  stats_fetch_consistency                     | cache                                           | Sets the consistency of accesses to statistics data.
- subtransaction_buffers                      | 256kB                                           | Sets the size of the dedicated buffer pool used for the subtransaction cache.
+ subtransaction_buffers                      | 32                                              | Sets the size of the dedicated buffer pool used for the subtransaction cache.
  summarize_wal                               | off                                             | Starts the WAL summarizer process to enable incremental backup.
  superuser_reserved_connections              | 3                                               | Sets the number of connection slots reserved for superusers.
- sync_replication_slots                      | off                                             | Enables a physical standby to synchronize logical failover replication slots from the primary server.
- synchronize_seqscans                        | on                                              | Enable synchronized sequential scans.
  synchronized_standby_slots                  |                                                 | Lists streaming replication standby server replication slot names that logical WAL sender processes will wait for.
+ synchronize_seqscans                        | on                                              | Enable synchronized sequential scans.
  synchronous_commit                          | on                                              | Sets the current transaction's synchronization level.
  synchronous_standby_names                   |                                                 | Number of synchronous standbys and list of names of potential synchronous ones.
+ sync_replication_slots                      | off                                             | Enables a physical standby to synchronize logical failover replication slots from the primary server.
  syslog_facility                             | local0                                          | Sets the syslog "facility" to be used when syslog enabled.
  syslog_ident                                | postgres                                        | Sets the program name used to identify PostgreSQL messages in syslog.
  syslog_sequence_numbers                     | on                                              | Add sequence number to syslog messages to avoid duplicate suppression.
@@ -321,7 +321,7 @@
  tcp_keepalives_idle                         | 7200                                            | Time between issuing TCP keepalives.
  tcp_keepalives_interval                     | 75                                              | Time between TCP keepalive retransmits.
  tcp_user_timeout                            | 0                                               | TCP user timeout.
- temp_buffers                                | 8MB                                             | Sets the maximum number of temporary buffers used by each session.
+ temp_buffers                                | 1024                                            | Sets the maximum number of temporary buffers used by each session.
  temp_file_limit                             | -1                                              | Limits the total size of all temporary files used by each process.
  temp_tablespaces                            |                                                 | Sets the tablespace(s) to use for temporary tables and sort files.
  TimeZone                                    | Etc/UTC                                         | Sets the time zone for displaying and interpreting time stamps.
@@ -330,13 +330,13 @@
  trace_notify                                | off                                             | Generates debugging output for LISTEN and NOTIFY.
  trace_sort                                  | off                                             | Emit information about resource usage in sorting.
  track_activities                            | on                                              | Collects information about executing commands.
- track_activity_query_size                   | 1kB                                             | Sets the size reserved for pg_stat_activity.query, in bytes.
+ track_activity_query_size                   | 1024                                            | Sets the size reserved for pg_stat_activity.query, in bytes.
  track_commit_timestamp                      | off                                             | Collects transaction commit time.
  track_counts                                | on                                              | Collects statistics on database activity.
  track_functions                             | none                                            | Collects function-level statistics on database activity.
  track_io_timing                             | off                                             | Collects timing statistics for database I/O activity.
  track_wal_io_timing                         | off                                             | Collects timing statistics for WAL I/O activity.
- transaction_buffers                         | 256kB                                           | Sets the size of the dedicated buffer pool used for the transaction status cache.
+ transaction_buffers                         | 32                                              | Sets the size of the dedicated buffer pool used for the transaction status cache.
  transaction_deferrable                      | off                                             | Whether to defer a read-only serializable transaction until it can be executed with no possible serialization failures.
  transaction_isolation                       | read committed                                  | Sets the current transaction's isolation level.
  transaction_read_only                       | off                                             | Sets the current transaction's read-only status.
@@ -346,7 +346,7 @@
  unix_socket_group                           |                                                 | Sets the owning group of the Unix-domain socket.
  unix_socket_permissions                     | 0777                                            | Sets the access permissions of the Unix-domain socket.
  update_process_title                        | on                                              | Updates the process title to show the active SQL command.
- vacuum_buffer_usage_limit                   | 2MB                                             | Sets the buffer pool size for VACUUM, ANALYZE, and autovacuum.
+ vacuum_buffer_usage_limit                   | 2048                                            | Sets the buffer pool size for VACUUM, ANALYZE, and autovacuum.
  vacuum_cost_delay                           | 0                                               | Vacuum cost delay in milliseconds.
  vacuum_cost_limit                           | 200                                             | Vacuum cost amount available before napping.
  vacuum_cost_page_dirty                      | 20                                              | Vacuum cost for a page dirtied by vacuum.
@@ -359,27 +359,27 @@
  vacuum_multixact_freeze_min_age             | 5000000                                         | Minimum age at which VACUUM should freeze a MultiXactId in a table row.
  vacuum_multixact_freeze_table_age           | 150000000                                       | Multixact age at which VACUUM should scan whole table to freeze tuples.
  wal_block_size                              | 8192                                            | Shows the block size in the write ahead log.
- wal_buffers                                 | 4MB                                             | Sets the number of disk-page buffers in shared memory for WAL.
+ wal_buffers                                 | 512                                             | Sets the number of disk-page buffers in shared memory for WAL.
  wal_compression                             | off                                             | Compresses full-page writes written in WAL file with specified method.
  wal_consistency_checking                    |                                                 | Sets the WAL resource managers for which WAL consistency checks are done.
- wal_decode_buffer_size                      | 512kB                                           | Buffer size for reading ahead in the WAL during recovery.
+ wal_decode_buffer_size                      | 524288                                          | Buffer size for reading ahead in the WAL during recovery.
  wal_init_zero                               | on                                              | Writes zeroes to new WAL files before first use.
  wal_keep_size                               | 0                                               | Sets the size of WAL files held for standby servers.
  wal_level                                   | replica                                         | Sets the level of information written to the WAL.
  wal_log_hints                               | off                                             | Writes full pages to WAL when first modified after a checkpoint, even for a non-critical modification.
  wal_receiver_create_temp_slot               | off                                             | Sets whether a WAL receiver should create a temporary replication slot if no permanent slot is configured.
- wal_receiver_status_interval                | 10s                                             | Sets the maximum interval between WAL receiver status reports to the sending server.
- wal_receiver_timeout                        | 1min                                            | Sets the maximum wait time to receive data from the sending server.
+ wal_receiver_status_interval                | 10                                              | Sets the maximum interval between WAL receiver status reports to the sending server.
+ wal_receiver_timeout                        | 60000                                           | Sets the maximum wait time to receive data from the sending server.
  wal_recycle                                 | on                                              | Recycles WAL files by renaming them.
- wal_retrieve_retry_interval                 | 5s                                              | Sets the time to wait before retrying to retrieve WAL after a failed attempt.
- wal_segment_size                            | 16MB                                            | Shows the size of write ahead log segments.
- wal_sender_timeout                          | 1min                                            | Sets the maximum time to wait for WAL replication.
- wal_skip_threshold                          | 2MB                                             | Minimum size of new file to fsync instead of writing WAL.
- wal_summary_keep_time                       | 10d                                             | Time for which WAL summary files should be kept.
+ wal_retrieve_retry_interval                 | 5000                                            | Sets the time to wait before retrying to retrieve WAL after a failed attempt.
+ wal_segment_size                            | 16777216                                        | Shows the size of write ahead log segments.
+ wal_sender_timeout                          | 60000                                           | Sets the maximum time to wait for WAL replication.
+ wal_skip_threshold                          | 2048                                            | Minimum size of new file to fsync instead of writing WAL.
+ wal_summary_keep_time                       | 14400                                           | Time for which WAL summary files should be kept.
  wal_sync_method                             | fdatasync                                       | Selects the method used for forcing WAL updates to disk.
- wal_writer_delay                            | 200ms                                           | Time between WAL flushes performed in the WAL writer.
- wal_writer_flush_after                      | 1MB                                             | Amount of WAL written out by WAL writer that triggers a flush.
- work_mem                                    | 4MB                                             | Sets the maximum memory to be used for query workspaces.
+ wal_writer_delay                            | 200                                             | Time between WAL flushes performed in the WAL writer.
+ wal_writer_flush_after                      | 128                                             | Amount of WAL written out by WAL writer that triggers a flush.
+ work_mem                                    | 4096                                            | Sets the maximum memory to be used for query workspaces.
  xmlbinary                                   | base64                                          | Sets how binary values are to be encoded in XML.
  xmloption                                   | content                                         | Sets whether XML data in implicit parsing and serialization operations is to be considered as documents or content fragments.
  zero_damaged_pages                          | off                                             | Continues processing past damaged page headers.
