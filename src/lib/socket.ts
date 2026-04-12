@@ -1,4 +1,5 @@
 import type { Server as HTTPServer } from "node:http";
+import { randomInt } from "node:crypto";
 import { fromNodeHeaders } from "better-auth/node";
 import { Server as SocketIOServer } from "socket.io";
 import { auth } from "./auth.js";
@@ -8,6 +9,18 @@ interface CustomSocketData {
 	user?: {
 		id: string;
 	};
+}
+
+const ROOM_CODE_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+const ROOM_CODE_DIGITS = "23456789";
+
+function generateRoomCode(): string {
+	const firstLetter = ROOM_CODE_LETTERS[randomInt(ROOM_CODE_LETTERS.length)];
+	const secondLetter = ROOM_CODE_LETTERS[randomInt(ROOM_CODE_LETTERS.length)];
+	const firstDigit = ROOM_CODE_DIGITS[randomInt(ROOM_CODE_DIGITS.length)];
+	const secondDigit = ROOM_CODE_DIGITS[randomInt(ROOM_CODE_DIGITS.length)];
+
+	return `${firstLetter}${secondLetter}${firstDigit}${secondDigit}`;
 }
 
 export function initSocketServer(httpServer: HTTPServer) {
@@ -103,18 +116,11 @@ export function initSocketServer(httpServer: HTTPServer) {
 				if (!user) return;
 				const playerName = user.id;
 
-				const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-				const ROOM_CODE_LENGTH = 4;
 				let roomId = "";
 				let isUnique = false;
 
 				while (!isUnique) {
-					roomId = "";
-					for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
-						roomId += ROOM_CODE_ALPHABET.charAt(
-							Math.floor(Math.random() * ROOM_CODE_ALPHABET.length),
-						);
-					}
+					roomId = generateRoomCode();
 					// Verify uniqueness against active games
 					if (!lobbyStore.getGame(roomId)) {
 						isUnique = true;
